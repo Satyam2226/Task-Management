@@ -17,8 +17,10 @@ dotenv.config();
 async function startServer() {
   const app = express();
 
+  // Create HTTP Server
   const httpServer = createServer(app);
 
+  // Socket.io Setup
   const io = new Server(httpServer, {
     cors: {
       origin: "*",
@@ -26,23 +28,23 @@ async function startServer() {
     },
   });
 
-  // Railway Port Fix
+  // Railway + Local Port
   const PORT = process.env.PORT || 3000;
 
   // MongoDB Connection
   const MONGODB_URI = process.env.MONGODB_URI;
 
-  if (MONGODB_URI) {
-    mongoose
-      .connect(MONGODB_URI)
-      .then(() => {
-        console.log("✅ MongoDB Connected");
-      })
-      .catch((err) => {
-        console.error("❌ MongoDB Error:", err.message);
-      });
-  } else {
-    console.warn("⚠️ MONGODB_URI Missing");
+  if (!MONGODB_URI) {
+    console.error("❌ MONGODB_URI Missing in .env");
+    process.exit(1);
+  }
+
+  try {
+    await mongoose.connect(MONGODB_URI);
+
+    console.log("✅ MongoDB Connected");
+  } catch (err: any) {
+    console.error("❌ MongoDB Error:", err.message);
   }
 
   // Middlewares
@@ -53,23 +55,25 @@ async function startServer() {
   app.set("io", io);
 
   io.on("connection", (socket) => {
-    console.log("User connected:", socket.id);
+    console.log("✅ User connected:", socket.id);
 
     socket.on("join-project", (projectId) => {
       socket.join(projectId);
+
+      console.log(`📁 Joined project: ${projectId}`);
     });
 
     socket.on("disconnect", () => {
-      console.log("User disconnected");
+      console.log("❌ User disconnected");
     });
   });
 
-  // Routes
+  // API Routes
   app.use("/api/auth", authRoutes);
   app.use("/api/projects", projectRoutes);
   app.use("/api/tasks", taskRoutes);
 
-  // Health Check
+  // Health Route
   app.get("/api/health", (req, res) => {
     res.json({
       status: "ok",
@@ -80,7 +84,7 @@ async function startServer() {
     });
   });
 
-  // Vite Middleware
+  // Vite Middleware (Development)
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: {
@@ -91,6 +95,7 @@ async function startServer() {
 
     app.use(vite.middlewares);
   } else {
+    // Production Build
     const distPath = path.join(process.cwd(), "dist");
 
     app.use(express.static(distPath));
@@ -102,7 +107,7 @@ async function startServer() {
 
   // Start Server
   httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
   });
 }
 
