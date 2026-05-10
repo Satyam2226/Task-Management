@@ -1,6 +1,6 @@
 {
   "$schema": "https://railpack.com/schema.json",
   "install": {
-    "cmd": "npm install"
+    "command": "npm install"
   }
 }
