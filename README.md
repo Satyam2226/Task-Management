@@ -56,7 +56,7 @@ Run Project
 npm run dev
 
 ✅ Output
-MongoDB Atlas ConnectedServer running on http://localhost:5000
+MongoDB Atlas ConnectedServer running on http://localhost:3000
 
 🌐 API Routes
 Auth Routes
